@@ -1,0 +1,54 @@
+#!/usr/bin/bash
+
+lock_the_screen()
+{
+swaylock -i ~/screenlockpass/passanswer.png
+return 0
+}
+
+password_create()
+{
+# generate a random password
+PASS=$(openssl rand -hex 10)
+
+# put that password in a image
+magick ~/screenlockpass/black.png -font Ubuntu-Regular -pointsize 20 -fill white -gravity South -annotate 0 $PASS ~/screenlockpass/passanswer.png
+
+# put the generated password into .txt file to compare it to input in swaylock
+echo $PASS > ~/screenlockpass/pass.txt
+
+return 0
+}
+
+# get current hour
+CURRENT_HOUR=$(date +%-H)
+
+# check if its not sleep time
+
+while ((CURRENT_HOUR > 4 && CURRENT_HOUR < 21))
+do
+    #echo "its not 21-04"
+    CURRENT_HOUR=$(date +%-H)
+    sleep 10
+done
+
+echo "its sleeping time!"
+
+# sleep time actions
+
+password_create
+
+# start swaylock with password in the background image
+
+lock_the_screen
+
+# if user still trying to use computer, repeat the lock after 20 minutes
+
+while ((CURRENT_HOUR < 5 || CURRENT_HOUR > 21))
+do
+    sleep 1500
+    password_create
+    lock_the_screen
+done
+
+exit 0

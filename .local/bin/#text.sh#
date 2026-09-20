@@ -1,0 +1,102 @@
+#!/usr/bin/bash
+
+TIMER_ENDTIME="${XDG_RUNTIME_DIR:-/tmp}/timer_endtime"
+TIMER_NOW="${XDG_RUNTIME_DIR:-/tmp}/timer_now"
+TIMER_ISWORKING=""
+TIMER_ISPOMODORO=""
+
+declare -g duration breaktime
+
+set_new_endtime()
+{
+    echo "set_new_endtime()"
+    duration=5
+    printf "duration is %d seconds\n" "$duration"
+    local now endtime
+    printf -v now '%(%s)T' -1
+    endtime=$((now + duration))
+    echo "$endtime" > "$TIMER_ENDTIME"
+    echo "$now" > "$TIMER_NOW"
+    printf "set_new_endtime(): endtime = %d\nnow = %d\n" "$endtime" "$now"
+}
+
+breaktime()
+{
+    echo "breaktime()"
+    swaylock -i ~/screenlockpass/breaktime.jpg &
+    sleep "$breaktime"
+    # sleep 5
+    printf "%d seconds passed, killing sway\n" "$breaktime"
+    pkill --signal SIGUSR1 swaylock
+    echo "successfully killed swaylock"
+    return 0
+}
+
+do_timer()
+{
+    echo "do_timer()"
+    local current_endtime current_now
+    current_endtime=$(< "$TIMER_ENDTIME")
+    current_now=$(< "$TIMER_NOW")
+    #(
+	
+    #Countdown
+    echo "countdown"
+    printf "current_endtime is %d\n" "$current_endtime"
+    printf "current_now is %d\n" "$current_now"
+    printf "IsTimerWorking? %s\n" "$TIMER_ISWORKING"
+    printf "IsPOMODOROWorking? %s\n" "$TIMER_ISPOMODORO"
+
+	while (( current_endtime > current_now )) && [[ -r
+	do
+	    sleep 1
+ 	    (( current_now++ ))
+	    printf "changed current_now to %d\n" "$current_now"
+	    echo "$current_now" > "$TIMER_NOW"
+	done
+
+	if [[ -f "$TIMER_ISPOMODORO" ]]; then
+	    echo "POMODORO IS ON (FILE EXISTS)"
+	    breaktime
+	    set_new_endtime
+	    do_timer
+	fi
+
+	echo "Timer is up!"
+	rm -f "$TIMER_ISWORKING"
+	echo "Successfully stopped the timer by deleting TIMER_ISWORKING"
+
+	show_timer
+	
+	return 0   
+
+    #)  &>/dev/null &
+
+    # return 0   
+
+}
+
+show_timer()
+{
+    # if [ ! -f "$TIMER_ISWORKING" ]; then
+#	echo "Error: Timer is not working, nothing to show" >&2
+#	exit 1
+ #   fi
+    
+    local current_timer
+    local current_now=$(< "$TIMER_NOW")
+    local current_endtime=$(< "$TIMER_ENDTIME")
+    current_timer=$(( current_endtime - current_now ))
+    printf "Time left: %d seconds\n" "$current_timer"
+
+    return 0
+}
+
+
+breaktime=5
+
+TIMER_ISWORKING="${XDG_RUNTIME_DIR:-/tmp}/timer_isworking"
+TIMER_ISPOMODORO="${XDG_RUNTIME_DIR:-/tmp}/timer_ispomodoro"
+
+set_new_endtime
+do_timer
